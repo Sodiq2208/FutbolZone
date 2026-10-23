@@ -1,2 +1,62 @@
-# FutbolZone
-FutbolZone — futbol yangiliklari, o‘yin natijalari va jamoalar haqida ma’lumot beruvchi mobil ilova.
+name: Build FutbolZone APK
+
+      - name: Install Android platform
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+        
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v4
+
+      - name: Extract project ZIP
+        run: |
+          if [ -f FutbolZone_CloudBuild_FIXED.zip ]; then
+            unzip -o FutbolZone_CloudBuild_FIXED.zip -d extracted
+          elif [ -f FutbolZone_CloudBuild.zip ]; then
+            unzip -o FutbolZone_CloudBuild.zip -d extracted
+          else
+            echo "Project ZIP not found"
+            ls -la
+            exit 1
+          fi
+          find extracted -name settings.gradle -o -name settings.gradle.kts
+          PROJECT_DIR="$(dirname "$(find extracted -name settings.gradle -o -name settings.gradle.kts | head -n 1)")"
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Gradle project not found in ZIP"
+            exit 1
+          fi
+          cp -a "$PROJECT_DIR"/. .
+
+      - name: Install Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build APK
+        run: gradle assembleDebug
+
+      - name: Save APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FutbolZone-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          
