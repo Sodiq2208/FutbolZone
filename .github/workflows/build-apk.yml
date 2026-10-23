@@ -13,6 +13,20 @@ jobs:
       - name: Get source code
         uses: actions/checkout@v4
 
+      - name: Extract uploaded ZIP
+        run: |
+          if [ ! -f FutbolZone_CloudBuild_FIXED.zip ]; then
+            echo "ZIP fayl topilmadi"
+            ls -la
+            exit 1
+          fi
+          unzip -o FutbolZone_CloudBuild_FIXED.zip -d extracted
+          if [ -d extracted/FutbolZone_Android_Project ]; then
+            cp -a extracted/FutbolZone_Android_Project/. .
+          else
+            cp -an extracted/. .
+          fi
+
       - name: Install Java
         uses: actions/setup-java@v4
         with:
