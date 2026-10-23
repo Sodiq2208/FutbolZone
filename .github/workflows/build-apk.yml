@@ -1,6 +1,9 @@
 
 name: Build FutbolZone APK
 
+      - name: Install Android platform
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+        
 on:
   workflow_dispatch:
   push:
