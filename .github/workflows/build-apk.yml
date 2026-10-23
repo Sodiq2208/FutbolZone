@@ -1,11 +1,4 @@
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android platform and build tools
-        run: |
-          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
-          
 name: Build FutbolZone APK
 
 on:
@@ -20,19 +13,24 @@ jobs:
       - name: Get source code
         uses: actions/checkout@v4
 
-      - name: Extract uploaded ZIP
+      - name: Extract project ZIP
         run: |
-          if [ ! -f FutbolZone_CloudBuild_FIXED.zip ]; then
-            echo "ZIP fayl topilmadi"
+          if [ -f FutbolZone_CloudBuild_FIXED.zip ]; then
+            unzip -o FutbolZone_CloudBuild_FIXED.zip -d extracted
+          elif [ -f FutbolZone_CloudBuild.zip ]; then
+            unzip -o FutbolZone_CloudBuild.zip -d extracted
+          else
+            echo "Project ZIP not found"
             ls -la
             exit 1
           fi
-          unzip -o FutbolZone_CloudBuild_FIXED.zip -d extracted
-          if [ -d extracted/FutbolZone_Android_Project ]; then
-            cp -a extracted/FutbolZone_Android_Project/. .
-          else
-            cp -an extracted/. .
+          find extracted -name settings.gradle -o -name settings.gradle.kts
+          PROJECT_DIR="$(dirname "$(find extracted -name settings.gradle -o -name settings.gradle.kts | head -n 1)")"
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Gradle project not found in ZIP"
+            exit 1
           fi
+          cp -a "$PROJECT_DIR"/. .
 
       - name: Install Java
         uses: actions/setup-java@v4
@@ -40,8 +38,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK
+      - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+
+      - name: Install Android platform
+        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
 
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4
